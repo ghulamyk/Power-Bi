@@ -1,0 +1,23 @@
+
+VAR _AggregatedAmountInCurrency =
+    ADDCOLUMNS (
+        SUMMARIZE (
+            Fact_Sales,
+            'Calendar'[Fiscal Year Offset],
+            'dimCurrency'[Currency Code]
+        ),
+        "@AmountInCurrency", [Base Amount | Snowflake], //[Base Amount | Snowflake] is the measure to which you want to apply FX rate
+        "@Rate", CALCULATE(
+                    MAX( 'factFX'[FX Rate] ),
+                    KEEPFILTERS( 'factFX'[FX Type] = "AOP" ),
+                    ALL('Calendar'), 
+                    'Calendar'[Fiscal Year Offset] = 0 
+                )
+    )
+VAR _Result =
+    SUMX (
+        _AggregatedAmountInCurrency,
+        [@AmountInCurrency] * COALESCE( [@Rate], IF( 'dimCurrency'[Currency Code] = "USD" , 1) )
+    )
+RETURN
+    _Result
