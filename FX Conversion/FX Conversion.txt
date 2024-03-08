@@ -9,7 +9,7 @@ VAR _AggregatedAmountInCurrency =
         "@AmountInCurrency", [Base Amount | Snowflake],
         "@Rate", CALCULATE(
                     MAX( 'factFX'[FX Rate] ),
-                    KEEPFILTERS( 'factFX'[FX Type] = "PL" ),
+                    KEEPFILTERS( 'factFX'[FX Type] = "AOP" ),
                     ALLEXCEPT('Calendar', 'Calendar'[Date])
                 )
     )
