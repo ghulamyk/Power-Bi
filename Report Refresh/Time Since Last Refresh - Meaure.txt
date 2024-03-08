@@ -1,0 +1,14 @@
+Time Since Last Refresh = 
+var _currTm = UTCNOW()
+var _refreshTm = MAX( 'zz-ReportRefresh'[Dataset Refresh DT - UTC] )
+var _delta = ROUNDDOWN ( DATEDIFF(_refreshTm, _currTm, MINUTE ) / 60 , 0 )
+var _isMultiple = _delta > 1
+var _is0 = _delta = 0
+return 
+
+SWITCH(
+    TRUE(),
+    _isMultiple, FORMAT( _delta, "0" ) & " hours since last dataset refresh",
+    NOT _is0, FORMAT( _delta, "0") & " hour since last dataset refresh",
+    _is0, "Dataset refreshed in the past hour"
+)
