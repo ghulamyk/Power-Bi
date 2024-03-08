@@ -1,0 +1,6 @@
+let
+    Source = #table({"Dataset Refresh DT - UTC"},{{DateTimeZone.FixedUtcNow()}}),
+    #"Changed Type" = Table.TransformColumnTypes(Source,{{"Dataset Refresh DT - UTC", type datetimezone}}),
+    #"Inserted Local Time" = Table.AddColumn(#"Changed Type", "Dataset Refresh DT - EST", each DateTimeZone.SwitchZone([#"Dataset Refresh DT - UTC"],-4), type datetimezone)
+in
+    #"Inserted Local Time"
