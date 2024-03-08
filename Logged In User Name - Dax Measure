@@ -1,0 +1,15 @@
+Logged In User Name = 
+VAR _user_name =
+        LOOKUPVALUE (
+            'fact_RLS_RenalCare'[User],
+            fact_RLS_RenalCare[Email Address], USERPRINCIPALNAME ()
+        )
+RETURN
+    IF (
+        LEN ( _user_name ) > 20,
+        LEFT (
+            _user_name,
+            17
+        ) & "...",
+        _user_name
+    )
