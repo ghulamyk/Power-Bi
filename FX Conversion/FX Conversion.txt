@@ -1,0 +1,22 @@
+
+VAR _AggregatedAmountInCurrency =
+    ADDCOLUMNS (
+        SUMMARIZE (
+            Fact_Sales,
+            'Calendar'[Date],
+            'dimCurrency'[Currency Code]
+        ),
+        "@AmountInCurrency", [Base Amount | Snowflake],
+        "@Rate", CALCULATE(
+                    MAX( 'factFX'[FX Rate] ),
+                    KEEPFILTERS( 'factFX'[FX Type] = "PL" ),
+                    ALLEXCEPT('Calendar', 'Calendar'[Date])
+                )
+    )
+VAR _Result =
+    SUMX (
+        _AggregatedAmountInCurrency,
+        [@AmountInCurrency] * COALESCE( [@Rate], IF( 'dimCurrency'[Currency Code] = "USD" , 1) )
+    )
+RETURN
+    _Result
