@@ -1,0 +1,18 @@
+Sales GTN Adjusted =
+var _sumAcrossProductRPT =
+        SUMX(
+            VALUES( dimReporting[RPT ID] ), 
+            CALCULATE( 
+                SUMX(
+                    dimProduct  
+                    , DIVIDE( [Base | Weekly Sales] * ( 1 - [Gross to Net Rate] ), NOT ISBLANK( [Gross to Net Rate] ) )
+                )
+            )
+        )
+ 
+var _zeroProductMapSpend =
+CALCULATE( 
+    [Base | Weekly Sales], 
+    KEEPFILTERS( ISBLANK( dimProduct[Product ID] ) ) 
+)
+RETURN _sumAcrossProductRPT + _zeroProductMapSpend
