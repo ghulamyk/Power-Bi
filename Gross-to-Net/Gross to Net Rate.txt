@@ -1,0 +1,17 @@
+Gross to Net Rate =
+var _divisor = DIVIDE( [Base | Weekly Sales], [Base | Weekly Sales] )
+var _result =
+CALCULATE(
+    SUM( FactQCUReportRates[GTN Rate] )
+    , ALLEXCEPT( dimProduct, dimProduct[Member ID MDT] ) 
+)
+var _ZeroProvideIntentionalBlanks =
+DIVIDE(
+    0,
+    COUNTROWS( FactQCUReportRates ) = 0
+)
+RETURN 
+DIVIDE( 
+    COALESCE( _result, _ZeroProvideIntentionalBlanks )
+    , _divisor && HASONEVALUE( dimProduct[Member ID MDT] )
+)
