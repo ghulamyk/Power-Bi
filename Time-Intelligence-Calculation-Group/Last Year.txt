@@ -1,0 +1,22 @@
+LY =
+var _currOffset = MAX( 'Calendar'[Fiscal Month Offset] )
+var _offsetBegin = MIN( 'Calendar'[Fiscal Month Offset] ) - 12
+var _offsetEnd = _currOffset - 12 
+var _currYr = MAX( 'Calendar'[Fiscal Year Offset] )
+var _datesOffsetPd = 
+CALCULATETABLE(
+    VALUES( 'Calendar'[Date] )
+    , ALL( 'Calendar' )
+    , 'Calendar'[Fiscal Month Offset] >= _offsetBegin &&
+        'Calendar'[Fiscal Month Offset] <= _offsetEnd
+)
+var _rslt = 
+CALCULATE ( 
+    SELECTEDMEASURE(), 
+    'Calendar'[Date] IN _datesOffsetPd
+)
+RETURN
+DIVIDE(
+    _rslt,
+    _currOffset <= 0 || _currYr <= 0
+)
