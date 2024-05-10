@@ -1,4 +1,4 @@
-Data Sources = 
+Data Sources =  // it is important to have a data source column in your respective tables
 VAR _base =
     UNION(
         SUMMARIZE( 
