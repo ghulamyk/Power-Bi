@@ -3,7 +3,7 @@ The lexical and syntactic grammars are presented using grammar productions. Each
 The first line of a grammar production is the name of the non-terminal symbol being defined, followed by a colon. Each successive indented line contains a possible expansion of the nonterminal given as a sequence of non-terminal or terminal symbols. For example, the production:
 
 if-expression:
-      if if-condition then true-expression else false-expression
+      **if** if-condition **then** true-expression **else** false-expression
 
 defines an if-expression to consist of the token if, followed by an if-condition, followed by the token then, followed by a true-expression, followed by the token else, followed by a false-expression.
 
@@ -11,7 +11,7 @@ When there is more than one possible expansion of a non-terminal symbol, the alt
 
 variable-list:
       variable
-      variable-list , variable
+      variable-list **,** variable
 
 defines a variable-list to either consist of a variable or consist of a variable-list followed by a variable. In other words, the definition is recursive and specifies that a variable list consists of one or more variables, separated by commas.
 
