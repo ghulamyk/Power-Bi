@@ -1,0 +1,4 @@
+
+GL_DTL --> 'fis_yr', 'post_item_num', 'acctg_doc_id', 'ledger_cd', 'cmpny_id', 'fis_yr_period_num', 'fis_yr_var_cd', 'rec_typ_cd', 'ver_num'
+
+PRFT_ANLYS --> curr_typ_cd,rec_typ_cd,plan_ver_num,period_yr,prft_seg_num,prft_seg_chg_num,gl_item_id,ln_item_num
