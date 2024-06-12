@@ -1,0 +1,4 @@
+    CALCULATE (
+        SELECTEDMEASURE (),
+        SAMEPERIODLASTYEAR ( 'Calendar'[Date] )
+    )
