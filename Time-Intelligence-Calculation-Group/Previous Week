@@ -1,0 +1,18 @@
+Previous Week =
+VAR _currOffset = SELECTEDVALUE('Calendar'[Fiscal Week Offset])
+VAR _offsetLastWeek = _currOffset - 1
+VAR _datesLastWeek = 
+    CALCULATETABLE(
+        VALUES('Calendar'[Date]),
+        FILTER(
+            ALL('Calendar'),
+            'Calendar'[Fiscal Week Offset] = _offsetLastWeek
+        )
+    )
+VAR _result = 
+    CALCULATE(
+        SELECTEDMEASURE(),
+        'Calendar'[Date] IN _datesLastWeek
+    )
+RETURN
+    _result
