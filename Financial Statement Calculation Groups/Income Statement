@@ -1,0 +1,117 @@
+var _01RawAmount = SELECTEDMEASURE()
+var _02DisplayValue = 
+    SUMX (
+        VALUES ( dimAccount[Flip Signs] ),
+        SELECTEDMEASURE() * dimAccount[Flip Signs]
+    )
+var _03AdditiveTotal =
+    VAR isHeaderFiltered =
+        ISFILTERED ( 'dimHeadersPL'[FS Header Description] )
+    VAR _signFlipped = 
+        SUMX (
+            VALUES ( dimAccount[Flip Signs] ),
+            SELECTEDMEASURE() * dimAccount[Flip Signs]
+        )
+    VAR Result =
+        IF ( isHeaderFiltered, _signFlipped, SELECTEDMEASURE() )
+    RETURN
+        Result
+var _04RunningTotal =
+    VAR ThisHeaderID =
+        SELECTEDVALUE ( 'dimHeadersPL'[Order] )
+    VAR Result =
+        CALCULATE (
+            SUMX(
+                dimHeadersPL,
+                dimHeadersPL[Flip Signs] * (-1) * CALCULATE(
+                    VAR isHeaderFiltered =
+                        ISFILTERED ( 'dimHeadersPL'[FS Header Description] )
+                    VAR _signFlipped = 
+                        SUMX (
+                            VALUES ( dimAccount[Flip Signs] ),
+                            SELECTEDMEASURE() * dimAccount[Flip Signs]
+                        )
+                    VAR Result = 
+                        IF ( isHeaderFiltered, _signFlipped, SELECTEDMEASURE() )
+                    RETURN
+                        Result)
+            ),        
+            ALL ( 'dimHeadersPL' ),
+            'dimHeadersPL'[Order] <= ThisHeaderID
+        )
+    RETURN
+        Result
+/// ------ Calculations for percentage calculations in the income statement
+    var _NetTradeSales =
+        CALCULATE(  
+            VAR isHeaderFiltered =  // sub in dax for 03 additive total because net trade sales is a type 1 calc type
+                ISFILTERED ( 'dimHeadersPL'[FS Header Description] )
+            VAR _signFlipped = 
+                SUMX (
+                    VALUES ( dimAccount[Flip Signs] ),
+                    SELECTEDMEASURE() * dimAccount[Flip Signs]
+                )
+            VAR Result =
+                IF ( isHeaderFiltered, _signFlipped, SELECTEDMEASURE() )
+            RETURN
+                Result,
+                ALLSELECTED( dimHeadersPL ), 
+                dimHeadersPL[FS Header Description] = "NET TRADE SALES" 
+            )
+    var _percentageCalcNumerator = 
+        var _currParentHeader = SELECTEDVALUE( dimHeadersPL[FS Header - Numerator] )
+        var _result = 
+            CALCULATE( 
+                MIN ( dimHeadersPL[Flip Signs] ) * // sub in dax for 04 running total calc because these are all type 2 caclulations 
+                VAR ThisHeaderID =
+                    SELECTEDVALUE ( 'dimHeadersPL'[Order] )
+                VAR _04part2 =
+                    CALCULATE (
+                        SUMX(
+                            dimHeadersPL,
+                            dimHeadersPL[Flip Signs] * CALCULATE(
+                                VAR isHeaderFiltered =
+                                    ISFILTERED ( 'dimHeadersPL'[FS Header Description] )
+                                VAR _signFlipped = 
+                                    SUMX (
+                                        VALUES ( dimAccount[Flip Signs] ),
+                                        SELECTEDMEASURE() * dimAccount[Flip Signs]
+                                    )
+                                VAR Result = 
+                                    IF ( isHeaderFiltered, _signFlipped, SELECTEDMEASURE() )
+                                RETURN
+                                    Result)
+                        ),        
+                        ALL ( 'dimHeadersPL' ),
+                        'dimHeadersPL'[Order] <= ThisHeaderID
+                    )
+                RETURN _04part2
+                ,
+                ALLSELECTED( dimHeadersPL ), 
+                dimHeadersPL[FS Header Description] = _currParentHeader
+            )
+        RETURN _result
+var _pctCalc = DIVIDE( _percentageCalcNumerator, _NetTradeSales )
+/// ------ Return to pattern
+var _05TotalAmount =
+    VAR CalcType =
+        SELECTEDVALUE ( 'dimHeadersPL'[Calc Type] )
+    VAR DisplayDetailCode =
+        SELECTEDVALUE ( 'dimHeadersPL'[Detail] )
+    VAR isAccountVisible =
+        ISFILTERED ( dimAccount[Acct Group 3 Desc] )
+    VAR isSelectedPdAfterCalPd = 
+        MAX ( 'Calendar'[Fiscal Year-Month num] ) <= MAX ( 'Current Fiscal Month-Year'[Fiscal Year-Month num] )
+    VAR Result =
+        SWITCH (
+            TRUE (),
+                    isAccountVisible = TRUE ()
+                        && DisplayDetailCode = 0, BLANK (),
+            CalcType = 1, _03AdditiveTotal, // IF ( isSelectedPdAfterCalPd, _03AdditiveTotal   ),
+            CalcType = 2, _04RunningTotal, //IF ( isSelectedPdAfterCalPd,  _04RunningTotal * MIN ( dimHeadersPL[Flip Signs] ) ),
+            CalcType = 3, _pctCalc //IF ( isSelectedPdAfterCalPd, DIVIDE( _percentageCalcNumerator, _NetTradeSales ) )
+        )
+    RETURN
+        Result 
+RETURN 
+    _05TotalAmount
