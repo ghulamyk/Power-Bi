@@ -1,0 +1,39 @@
+let
+    Source = src_RLS,
+    #"Filtered Rows1" = Table.SelectRows(Source, each Text.Contains([Email Address], "@")),
+    #"Filtered Rows" = Table.SelectRows(#"Filtered Rows1", each ([Access] <> "Null")),
+    #"Removed Columns" = Table.RemoveColumns(#"Filtered Rows",{"RPT ID Description"}),
+    CleanAccessColumn = Table.TransformColumns(#"Removed Columns",{{"Access", each if Text.Contains(Text.Upper(_),"RPT") then Text.Upper(_) else Text.Proper(_)}}),
+    #"Replaced Value" = Table.ReplaceValue(CleanAccessColumn," ","",Replacer.ReplaceText,{"RPT ID"}),
+    #"CreateList RPT ID" = Table.FromRecords(
+    Table.TransformRows(#"Replaced Value",
+    (r) => Record.TransformFields(r,
+    {"RPT ID", each if
+    Text.Contains(r[Access],"RPT") and
+    Text.Length(r[RPT ID]) > 0
+    //Text.Contains(r[RPT ID],",")
+    then Text.Split(_,",") else {}}
+    ))),
+    #"Expanded RPT ID" = Table.ExpandListColumn(#"CreateList RPT ID", "RPT ID"),
+    #"CreateList Region" = Table.FromRecords(
+    Table.TransformRows(#"Expanded RPT ID",
+    (r) => Record.TransformFields(r,
+    {"Region", each if
+    Text.Contains(r[Access],"Region") and
+    Text.Length(r[Region]) > 0
+    //Text.Contains(r[RPT ID],",")
+    then Text.Split(_,",") else {}}
+    ))),
+    #"Expanded Region1" = Table.ExpandListColumn(#"CreateList Region", "Region"),
+    CleanRegionColumn = Table.TransformColumns(#"Expanded Region1",{
+    {
+    "Region", each if _ = null then null
+    else if Text.Contains(Text.Upper(_),"CHINA") then "Greater China"
+    else if Text.Upper(_) = "CORPORATE" then Text.Proper(_)
+    else if Text.Upper(_) = "AMERICAS" then Text.Proper(_)
+    else _, type text
+    }}
+    ),
+    #"Changed Type" = Table.TransformColumnTypes(CleanRegionColumn,{{"User", type text}, {"Email Address", type text}, {"Access", type text}, {"Region", type text}, {"RPT ID", type text}})
+in
+    #"Changed Type"
