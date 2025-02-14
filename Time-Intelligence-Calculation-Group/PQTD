@@ -1,0 +1,13 @@
+
+var _currFiscQtr = MAX( 'Calendar'[Sequential Fiscal Quarter] )
+var _prevFiscQtr = _currFiscQtr - 1
+var _dayOfFiscalQtr = MAX( 'Calendar'[Day of Fiscal Quarter] )
+// likely need to errHndl cases where largest day in fiscal qtr doesn't line up right
+ 
+RETURN 
+CALCULATE(
+    SELECTEDMEASURE()
+    , ALL( 'Calendar' )
+    , 'Calendar'[Sequential Fiscal Quarter] = _prevFiscQtr
+    , 'Calendar'[Day of Fiscal Quarter] <= _dayOfFiscalQtr
+)
