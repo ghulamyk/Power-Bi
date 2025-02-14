@@ -1,0 +1,21 @@
+07 - Total Amount (BS) = 
+VAR CalcType =
+    SELECTEDVALUE ( 'dimHeadersBS'[Calc Type] )
+VAR DisplayDetailCode =
+    SELECTEDVALUE ( 'dimHeadersBS'[Detail] )
+VAR isAccountVisible =
+    ISFILTERED ( dimAccount[Acct Group 3 Desc] )
+
+VAR Result =
+    SWITCH (
+        TRUE (),
+        isAccountVisible = TRUE ()
+            && DisplayDetailCode = 0, BLANK (),
+        //to make the accounts invisible by changing the COA attributes
+        CalcType = 1, [03 - Additive Total (BS)],
+        CalcType = 2, [04 - Running Total (BS)] * MIN(dimHeadersBS[Flip Signs]),
+        CalcType = 3, [05 - Running Subtotal (BS)] * MIN(dimHeadersBS[Flip Signs]),
+        CalcType = 9, [06 - Liabilities and Equity (BS)] * MIN(dimHeadersBS[Flip Signs])
+    )
+RETURN
+    Result
