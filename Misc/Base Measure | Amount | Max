@@ -1,0 +1,11 @@
+Base Measure | Amount | Max = VAR _currentMonth = SELECTEDVALUE(MaxFiscalMonthDate[Fiscal Month Offset])
+VAR _MaxMonth = CALCULATE(
+    MAX(MaxFiscalMonthDate[Fiscal Month Offset]),
+    ALLSELECTED(MaxFiscalMonthDate),
+    MaxFiscalMonthDate[Fiscal Month Offset] <= _currentMonth)
+VAR _MaxAmt = CALCULATE(
+    [Base Measure | Amount],
+    ALL(MaxFiscalMonthDate),
+    KEEPFILTERS(MaxFiscalMonthDate[Fiscal Month Offset] = _MaxMonth))
+RETURN
+    _MaxAmt
