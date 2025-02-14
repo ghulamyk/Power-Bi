@@ -1,0 +1,13 @@
+04 - Running Total (BS) = 
+VAR ThisHeaderID =
+    SELECTEDVALUE ( 'dimHeadersBS'[Order] )
+VAR ThisHeaderIDRangeBegin = ROUNDDOWN(ThisHeaderID/10^(LEN(ThisHeaderID)-1),0)*10^(LEN(ThisHeaderID)-1)
+
+VAR Result =
+    CALCULATE (
+        [03 - Additive Total (BS)],
+        ALL ( 'dimHeadersBS' ),
+        'dimHeadersBS'[Order] <= ThisHeaderID && 'dimHeadersBS'[Order] >= ThisHeaderIDRangeBegin
+    )
+RETURN
+    Result
