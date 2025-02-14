@@ -1,0 +1,35 @@
+FS Header ID	FS Header Description					Calc Type	Detail	Flip Signs	Order	PCT Calc	FS Header - Numerator
+A03001		Net Trade Sales						1		1	-1		7	0	
+M04000		Total Std COS						1		1	1		8	0	
+M05000		Standard Gross Margin					2		0	-1		9	1	
+M05001		Total OPC without Allocations				1		1	1		10	0	
+M05900		Gross Margin without Allocations			2		0	-1		11	1	
+M06590		Direct Overhead without Allocations			1		1	1		12	0	
+M09000		Total Other Operating(Inc)/Exp				1		1	1		13	0	
+M09493		Operating Profit without Allocations			2		0	-1		14	1	
+A06407		Total IDD/GOSC IDD without Allocations			1		1	1		15	0	
+M09494		Operating Profit incl IDD without Allocations		2		0	-1		16	1	
+M06511		Total Corporate Allocations				1		1	1		17	0	
+M09495		Operating Profit with Allocations			2		0	-1		18	0	
+A09400		Total Currency						1		1	1		20	0	
+A09600		Total Non Operating (Inc)/Exp				1		1	1		20	0	
+M09299		PBT (excl. Amortization)				2		0	-1		21	1	
+A09310		Trade Interest (Income)					1		1	1		22		
+A09506		Income Tax Expense Excluding Amortization		1		1	1		30	0	
+A09330		Trade Interest Expense					1		1	1		23		
+A09360		Net Earnings Attributable to Noncontrolling Interest	1		1	1		25	0	
+A09361		NCI Planning/Forecasting Adjustment (AOP USE ONLY)	1		1	1		26	0	
+M09599		Cash Net Earnings					2		0	-1		27	1	
+A09481		FX Contingency (AOP USE ONLY)				1		1	1		28	0	
+A09190		Total Amortization					1		1	1		29	0	
+M09950		Total Cross-Sell					1		1	1		30	0	
+A09505		Income Tax Expense - Amortization			1		1	1		31	0	
+Intercompany Accounts	Intercompany Accounts				1		1	1		19	0	
+M_TotIncStmt	Management - Total Income Statement			2		0	-1		33	1	
+M05000_		Standard Gross Margin %					3		0	-1		10	1	Standard Gross Margin
+M05900_		Gross Margin without Allocations %			3		0	-1		12	1	Gross Margin without Allocations
+M09493_		Operating Profit without Allocations %			3		0	-1		15	1	Operating Profit without Allocations
+M09494_		Operating Profit incl IDD without Allocations %		3		0	-1		17	1	Operating Profit incl IDD without Allocations
+M09299_		PBT (excl. Amortization) %				3		0	-1		22	1	PBT (excl. Amortization)
+M09599_		Cash Net Earnings %					3		0	-1		28	1	Cash Net Earnings
+M_TotIncStmt_	Management - Total Income Statement %			3		0	-1		34	1	Management - Total Income Statement
