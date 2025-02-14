@@ -1,0 +1,13 @@
+04 - Running Amount = VAR ThisHeaderID =
+    SELECTEDVALUE ( 'dimHeadersPL'[Order] )
+VAR Result =
+    CALCULATE (
+        SUMX(
+            dimHeadersPL,
+            [03 - Additive Amount] * dimHeadersPL[Flip Signs]
+        ),        
+        ALL ( 'dimHeadersPL' ),
+        'dimHeadersPL'[Order] <= ThisHeaderID
+    )
+RETURN
+    Result
