@@ -1,0 +1,6 @@
+02 - Display Value (BS) = 
+
+SUMX (
+    VALUES ( dimAccount[Flip Signs] ),
+    [01 - Raw Amount (BS)] * dimAccount[Flip Signs]
+)
