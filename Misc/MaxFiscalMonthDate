@@ -1,0 +1,18 @@
+MaxFiscalMonthDate = 
+FILTER(
+    ADDCOLUMNS(
+        SUMMARIZE(
+            'Calendar',
+            'Calendar'[Fiscal Month-Year], 'Calendar'[Fiscal Year-Month num],'Calendar'[Sequential Fiscal Month], 'Calendar'[Fiscal Month Offset]
+        ),
+        "Max Date", 
+        CALCULATE(
+            MAX(Fact_OpenOrder[Date]),
+            FILTER(
+                ALL('Calendar'),
+                'Calendar'[Fiscal Year-Month num] = EARLIER('Calendar'[Fiscal Year-Month num])
+            )
+        )
+    ),
+    [Max Date] <> BLANK()
+)
