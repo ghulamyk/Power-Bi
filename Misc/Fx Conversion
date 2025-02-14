@@ -1,0 +1,22 @@
+Base | Weekly Sales | Snowflake | AOP = 
+VAR _AggregatedAmountInCurrency =
+    ADDCOLUMNS (
+        SUMMARIZE (
+            Fact_Revenue,
+            'Calendar'[Date],
+            'dimCurrency'[Currency Code]
+        ),
+        "@AmountInCurrency", [Base Revenue Amount],
+        "@Rate", CALCULATE(
+                    MAX( 'factFX'[FX Rate] ),
+                    KEEPFILTERS( 'factFX'[FX Type] = "AOP" ),
+                    ALLEXCEPT('Calendar', 'Calendar'[Date])
+                )
+    )
+VAR _Result =
+    SUMX (
+        _AggregatedAmountInCurrency,
+        [@AmountInCurrency] * COALESCE( [@Rate], IF( 'dimCurrency'[Currency Code] = "USD" , 1) )
+    )
+RETURN
+    _Result
