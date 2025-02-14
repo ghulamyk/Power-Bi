@@ -1,0 +1,169 @@
+let
+  YearStart = 2020,
+  Source = List.Dates(#date(YearStart,1,1),365*8,#duration(1, 0, 0, 0)),
+  #"Converted to table" = Table.FromList(Source, Splitter.SplitByNothing(), null, null, ExtraValues.Error),
+  #"Renamed columns" = Table.RenameColumns(#"Converted to table", {{"Column1", "Date"}}),
+  #"Changed column type" = Table.TransformColumnTypes(#"Renamed columns", {{"Date", type date}}),
+    // sample comment
+    #"Add Fiscal Year Start" = Table.AddColumn(#"Changed column type", "Fiscal Year Start", each if [Date] > Date.AddDays(#date(Date.Year([Date]),4,30), Date.DayOfWeek(#date(Date.Year([Date]),4,30),5)*-1) then
+        Date.AddDays(#date(Date.Year([Date]),4,30), Date.DayOfWeek(#date(Date.Year([Date]),4,30),5)*-1+1) else 
+        Date.AddDays(#date(Date.Year([Date])-1,4,30), Date.DayOfWeek(#date(Date.Year([Date])-1,4,30),5)*-1+1), type date),
+    ref_FiscalStartCalendar = List.Min(#"Add Fiscal Year Start"[Fiscal Year Start]),
+    #"Add Fiscal Year End" = Table.AddColumn(#"Add Fiscal Year Start", "Fiscal Year End", each if [Date] > Date.AddDays(#date(Date.Year([Date]),4,30), Date.DayOfWeek(#date(Date.Year([Date]),4,30),5)*-1) then
+        Date.AddDays(#date(Date.Year([Date])+1,4,30), Date.DayOfWeek(#date(Date.Year([Date])+1,4,30),5)*-1) else 
+        Date.AddDays(#date(Date.Year([Date]),4,30), Date.DayOfWeek(#date(Date.Year([Date]),4,30),5)*-1), type date),
+    #"Add FIscal Year" = Table.AddColumn(#"Add Fiscal Year End", "Fiscal Year", each Text.Combine({"FY", Text.Range(Text.From(Date.Year([Fiscal Year End])),2,2)}), type text),
+    #"Add Fiscal Weeks" = Table.AddColumn(#"Add FIscal Year", "Fiscal Weeks", each (Duration.Days([Fiscal Year End]-[Fiscal Year Start])+1)/7, Int64.Type),
+    #"Add Fiscal Month 01 End 4/5" = Table.AddColumn(#"Add Fiscal Weeks", "Fiscal Month 01 End", each if [Fiscal Weeks]=53 then Date.AddDays([Fiscal Year Start],35-1) else Date.AddDays([Fiscal Year Start],28-1), type date),
+    #"Add Fiscal Month 02 End 5" = Table.AddColumn(#"Add Fiscal Month 01 End 4/5", "Fiscal Month 02 End", each Date.AddDays([Fiscal Month 01 End],35), type date),
+    #"Add Fiscal Month 03 End 4" = Table.AddColumn(#"Add Fiscal Month 02 End 5", "Fiscal Month 03 End", each Date.AddDays([Fiscal Month 02 End],28), type date),
+    #"Add Fiscal Month 04 End 4" = Table.AddColumn(#"Add Fiscal Month 03 End 4", "Fiscal Month 04 End", each Date.AddDays([Fiscal Month 03 End],28), type date),
+    #"Add Fiscal Month 05 End 5" = Table.AddColumn(#"Add Fiscal Month 04 End 4", "Fiscal Month 05 End", each Date.AddDays([Fiscal Month 04 End],35), type date),
+    #"Add Fiscal Month 06 End 4" = Table.AddColumn(#"Add Fiscal Month 05 End 5", "Fiscal Month 06 End", each Date.AddDays([Fiscal Month 05 End],28), type date),
+    #"Add Fiscal Month 07 End 4" = Table.AddColumn(#"Add Fiscal Month 06 End 4", "Fiscal Month 07 End", each Date.AddDays([Fiscal Month 06 End],28), type date),
+    #"Add Fiscal Month 08 End 5" = Table.AddColumn(#"Add Fiscal Month 07 End 4", "Fiscal Month 08 End", each Date.AddDays([Fiscal Month 07 End],35), type date),
+    #"Add Fiscal Month 09 End 4" = Table.AddColumn(#"Add Fiscal Month 08 End 5", "Fiscal Month 09 End", each Date.AddDays([Fiscal Month 08 End],28), type date),
+    #"Add Fiscal Month 10 End 4" = Table.AddColumn(#"Add Fiscal Month 09 End 4", "Fiscal Month 10 End", each Date.AddDays([Fiscal Month 09 End],28), type date),
+    #"Add Fiscal Month 11 End 5" = Table.AddColumn(#"Add Fiscal Month 10 End 4", "Fiscal Month 11 End", each Date.AddDays([Fiscal Month 10 End],35), type date),
+    #"Add Fiscal Month 12 End 4" = Table.AddColumn(#"Add Fiscal Month 11 End 5", "Fiscal Month 12 End", each Date.AddDays([Fiscal Month 11 End],28), type date),
+    #"Add Fiscal Period Num" = Table.AddColumn(#"Add Fiscal Month 12 End 4", "Fiscal Month", each if 
+[Date] <= [Fiscal Month 01 End] then 1 else if
+[Date] <= [Fiscal Month 02 End] then 2 else if
+[Date] <= [Fiscal Month 03 End] then 3 else if
+[Date] <= [Fiscal Month 04 End] then 4 else if
+[Date] <= [Fiscal Month 05 End] then 5 else if
+[Date] <= [Fiscal Month 06 End] then 6 else if
+[Date] <= [Fiscal Month 07 End] then 7 else if
+[Date] <= [Fiscal Month 08 End] then 8 else if
+[Date] <= [Fiscal Month 09 End] then 9 else if
+[Date] <= [Fiscal Month 10 End] then 10 else if
+[Date] <= [Fiscal Month 11 End] then 11 else if
+[Date] <= [Fiscal Month 12 End] then 12
+
+
+else null, Int64.Type),
+    #"Add FY" = Table.AddColumn(#"Add Fiscal Period Num", "FY", each Date.Year([Fiscal Year End]), Int64.Type),
+    #"Add Day Name" = Table.AddColumn(#"Add FY", "Day Name", each Date.DayOfWeekName([Date]), type text),
+    #"Add Day" = Table.AddColumn(#"Add Day Name", "Day", each Date.Day([Date]), Int64.Type),
+    #"Add Days in Month" = Table.AddColumn(#"Add Day", "Days in month", each Date.DaysInMonth([Date]), Int64.Type),
+    #"Add End of Month" = Table.AddColumn(#"Add Days in Month", "End of month", each Date.EndOfMonth([Date]), type date),
+    #"Add Month" = Table.AddColumn(#"Add End of Month", "Month", each Date.Month([Date]), Int64.Type),
+    #"Add Fiscal Quarter Num" = Table.AddColumn(#"Add Month", "Fiscal Quarter Number", each if [Fiscal Month] <= 3 then 1 else if [Fiscal Month] <= 6 then 2 else if [Fiscal Month] <= 9 then 3 else if [Fiscal Month] <= 12 then 4 else 999, Int64.Type),
+    #"Add Fiscal Quarter" = Table.AddColumn(#"Add Fiscal Quarter Num", "Fiscal Quarter", each Text.Combine({"Q", Text.From([Fiscal Quarter Number])}), type text),
+    #"Add Fiscal Quarter-Year" = Table.AddColumn(#"Add Fiscal Quarter", "Fiscal Quarter-Year", each Text.Combine({[Fiscal Quarter],"-",[Fiscal Year]}), type text),
+    #"Add Fiscal Month Name" = Table.AddColumn(#"Add Fiscal Quarter-Year", "Fiscal Month Name", each if [Fiscal Month]<=8 then Text.Start(Date.MonthName(#date([FY],[Fiscal Month]+4,15)),3) else Text.Start(Date.MonthName(#date([FY],[Fiscal Month]-8,15)),3), type text),
+    #"Add Fiscal Month-Year" = Table.AddColumn(#"Add Fiscal Month Name", "Fiscal Month-Year", each Text.Combine({[Fiscal Month Name], [Fiscal Year]}, "-"), type text),
+    #"Add Fiscal Year-Month num" = Table.AddColumn(#"Add Fiscal Month-Year", "Fiscal Year-Month num", each [FY]*100+[Fiscal Month], Int64.Type),
+    #"Add Fiscal Year-Quarter num" = Table.AddColumn(#"Add Fiscal Year-Month num", "Fiscal Year-Quarter num", each [FY]*100+[Fiscal Quarter Number], Int64.Type),
+    #"Add Fiscal week num" = Table.AddColumn(#"Add Fiscal Year-Quarter num", "Fiscal Week num", each Number.RoundUp(Duration.Days([Date]-Date.AddDays([Fiscal Year Start],-1))/7), Int64.Type),
+  AddDayOfFiscalYear = Table.AddColumn(#"Add Fiscal week num", "Day of Fiscal Year", each Duration.Days([Date] - [Fiscal Year Start]) + 1, Int64.Type),
+  AddDateOffset = Table.TransformColumnTypes(Table.AddColumn(AddDayOfFiscalYear, "Date Offset", each if DateTime.Date(DateTime.FixedLocalNow()) > [Date]
+then (-1) * Duration.Days(DateTime.Date(DateTime.FixedLocalNow())-[Date]) else if DateTime.Date(DateTime.FixedLocalNow()) < [Date] then 
+Duration.Days([Date] - DateTime.Date(DateTime.FixedLocalNow())) else 0), {{"Date Offset", Int64.Type}}),
+
+    fiscalWeeks =
+      let 
+        #"Removed Other Columns" = Table.SelectColumns(AddDateOffset,{"FY", "Fiscal Week num","Date"}),
+        #"Grouped Rows" = Table.Group(#"Removed Other Columns", {"FY", "Fiscal Week num"}, {{"Start of Fiscal Week", each List.Min([Date]), type nullable date}, {"End of Fiscal Week", each List.Max([Date]), type nullable date}}),
+        #"Sorted Rows" = Table.Sort(#"Grouped Rows",{{"FY", Order.Ascending}, {"Fiscal Week num", Order.Ascending}}),
+        #"Added Index" = Table.AddIndexColumn(#"Sorted Rows", "Sequential Fiscal Week", 1, 1, Int64.Type),
+        #"Added Custom" = Table.AddColumn(#"Added Index", "Fiscal Week Offset", each Table.SelectColumns(Table.LastN(Table.SelectRows(#"Added Index", each Date.IsInPreviousNDays([Start of Fiscal Week], 7)),1),"Sequential Fiscal Week" )),
+        #"Expanded Fiscal Week Offset" = Table.ExpandTableColumn(#"Added Custom", "Fiscal Week Offset", {"Sequential Fiscal Week"}, {"CurrFiscWk"}),
+        #"Changed Type" = Table.TransformColumnTypes(#"Expanded Fiscal Week Offset",{{"CurrFiscWk", Int64.Type}}),
+        #"Added Custom1" = Table.AddColumn(#"Changed Type", "Fiscal Week Offset", each [Sequential Fiscal Week] - [CurrFiscWk], Int64.Type),
+        #"Removed Columns" = Table.RemoveColumns(#"Added Custom1",{"CurrFiscWk"})
+      in 
+        #"Removed Columns",
+
+    ResetCal = AddDateOffset,
+    #"Merged Queries" = Table.NestedJoin(ResetCal, {"FY", "Fiscal Week num"}, fiscalWeeks, {"FY", "Fiscal Week num"}, "Add_SequentialWeek", JoinKind.LeftOuter),
+    #"Expanded Add_SequentialWeek" = Table.ExpandTableColumn(#"Merged Queries", "Add_SequentialWeek", {"Start of Fiscal Week", "End of Fiscal Week", "Sequential Fiscal Week", "Fiscal Week Offset"}, {"Start of Fiscal Week", "End of Fiscal Week", "Sequential Fiscal Week", "Fiscal Week Offset"}),
+ 
+
+    Add_SequentialWeek = Table.AddColumn(#"Expanded Add_SequentialWeek", "Sequential Week Number", each Number.RoundUp(Duration.Days([Date]-Date.AddDays(Date.AddDays(#date(YearStart-1,4,30), Date.DayOfWeek(#date(Date.Year([Date])-1,4,30),5)*-1+1),-1))/7) - Number.RoundUp(Duration.Days(#date(YearStart,1,1)-Date.AddDays(Date.AddDays(#date(YearStart-1,4,30), Date.DayOfWeek(#date(Date.Year([Date])-1,4,30),5)*-1+1),-1))/7), Int64.Type),
+    Add_StartOfWeek = Table.AddColumn(Add_SequentialWeek, "Start of Week", each Date.AddDays( Date.AddDays(#date(YearStart-1,4,30), Date.DayOfWeek(#date(Date.Year([Date])-1,4,30),5)*-1+1)
+    ,(-7) + 7 * Number.RoundUp(Duration.Days([Date]-Date.AddDays(Date.AddDays(#date(YearStart-1,4,30), Date.DayOfWeek(#date(Date.Year([Date])-1,4,30),5)*-1+1),-1))/7) ), type date),
+    Add_EndOfWeek = Table.AddColumn(Add_StartOfWeek, "End of Week", each Date.AddDays( Date.AddDays(#date(YearStart-1,4,30), Date.DayOfWeek(#date(Date.Year([Date])-1,4,30),5)*-1+1)
+    ,(-1) + 7 * Number.RoundUp(Duration.Days([Date]-Date.AddDays(Date.AddDays(#date(YearStart-1,4,30), Date.DayOfWeek(#date(Date.Year([Date])-1,4,30),5)*-1+1),-1))/7) ), type date),
+
+    #"Add Month name" = Table.AddColumn(Add_EndOfWeek, "Month name", each Date.MonthName([Date]), type text),
+    #"Changed Type" = Table.TransformColumnTypes(#"Add Month name",{{"Date", type date}, {"Fiscal Year Start", type date}, {"Fiscal Year End", type date}, {"Fiscal Month 01 End", type date}, {"Fiscal Month 02 End", type date}, {"Fiscal Month 03 End", type date}, {"Fiscal Month 04 End", type date}, {"Fiscal Month 05 End", type date}, {"Fiscal Month 06 End", type date}, {"Fiscal Month 07 End", type date}, {"Fiscal Year", type text}, {"Fiscal Weeks", Int64.Type}, {"Fiscal Month 08 End", type date}, {"Fiscal Month 09 End", type date}, {"Fiscal Month 10 End", type date}, {"Fiscal Month 11 End", type date}, {"Fiscal Month 12 End", type date}, {"Fiscal Month", Int64.Type}, {"FY", Int64.Type}, {"Day", Int64.Type}, {"Days in month", Int64.Type}, {"Day Name", type text}, {"End of month", type date}, {"Month", Int64.Type}, {"Fiscal Quarter Number", Int64.Type}, {"Fiscal Quarter", type text}, {"Fiscal Quarter-Year", type text}, {"Fiscal Month Name", type text}, {"Fiscal Month-Year", type text}, {"Month name", type text}, {"Fiscal Year-Month num", Int64.Type}, {"Fiscal Year-Quarter num", Int64.Type}, {"Fiscal Week num", Int64.Type}}),
+    // code added below is from Matt Hecht on 3/22/23. Added start/end of fiscal quarters and months, with offsets to support them
+	Add_Start_Of_Fiscal_mo = Table.AddColumn(#"Changed Type", "Start of Fiscal Month", each 
+			if [Fiscal Month] = 1 then [Fiscal Year Start] else 
+			if [Fiscal Month] = 2 then Date.AddDays([Fiscal Month 01 End], 1) else 
+			if [Fiscal Month] = 3 then Date.AddDays([Fiscal Month 02 End], 1) else 
+			if [Fiscal Month] = 4 then Date.AddDays([Fiscal Month 03 End], 1) else 
+			if [Fiscal Month] = 5 then Date.AddDays([Fiscal Month 04 End], 1) else 
+			if [Fiscal Month] = 6 then Date.AddDays([Fiscal Month 05 End], 1) else 
+			if [Fiscal Month] = 7 then Date.AddDays([Fiscal Month 06 End], 1) else 
+			if [Fiscal Month] = 8 then Date.AddDays([Fiscal Month 07 End], 1) else 
+			if [Fiscal Month] = 9 then Date.AddDays([Fiscal Month 08 End], 1) else 
+			if [Fiscal Month] = 10 then Date.AddDays([Fiscal Month 09 End], 1) else 
+			if [Fiscal Month] = 11 then Date.AddDays([Fiscal Month 10 End], 1) else 
+			if [Fiscal Month] = 12 then Date.AddDays([Fiscal Month 11 End], 1) else 
+			null, type date ),
+    Add_End_Of_Fiscal_mo = Table.AddColumn(Add_Start_Of_Fiscal_mo, "End of Fiscal Month", each 
+			if [Fiscal Month] = 1 then [Fiscal Month 01 End] else 
+			if [Fiscal Month] = 2 then [Fiscal Month 02 End] else 
+			if [Fiscal Month] = 3 then [Fiscal Month 03 End] else 
+			if [Fiscal Month] = 4 then [Fiscal Month 04 End] else 
+			if [Fiscal Month] = 5 then [Fiscal Month 05 End] else 
+			if [Fiscal Month] = 6 then [Fiscal Month 06 End] else 
+			if [Fiscal Month] = 7 then [Fiscal Month 07 End] else 
+			if [Fiscal Month] = 8 then [Fiscal Month 08 End] else 
+			if [Fiscal Month] = 9 then [Fiscal Month 09 End] else 
+			if [Fiscal Month] = 10 then [Fiscal Month 10 End] else 
+			if [Fiscal Month] = 11 then [Fiscal Month 11 End] else 
+			if [Fiscal Month] = 12 then [Fiscal Month 12 End] else 
+			null, type date ),
+	CurrDt_Index = if List.Max( Add_Start_Of_Fiscal_mo[Date] ) > DateTime.Date(DateTime.FixedLocalNow()) then DateTime.Date(DateTime.FixedLocalNow()) else Date.AddDays( List.Max( Add_Start_Of_Fiscal_mo[Date] ), -1 ),
+	CurrDt_Start_Fmo_Index = Record.Field(Table.Min(Table.Buffer(Table.SelectRows( Add_End_Of_Fiscal_mo, each [End of Fiscal Month] > CurrDt_Index ) ), "Start of Fiscal Month"), "Start of Fiscal Month"),
+	Add_Fiscal_Month_Offset = Table.AddColumn(Add_End_Of_Fiscal_mo, "Fiscal Month Offset", each Number.Round(Number.From( [Start of Fiscal Month] - CurrDt_Start_Fmo_Index)/ 30,0), Int64.Type),
+    Add_Start_Of_Fiscal_Qtr = Table.AddColumn(Add_Fiscal_Month_Offset, "Start of Fiscal Quarter", each 
+			if [Fiscal Month] = 1 then [Fiscal Year Start] else 
+			if [Fiscal Month] = 2 then [Fiscal Year Start] else 
+			if [Fiscal Month] = 3 then [Fiscal Year Start] else 
+			if [Fiscal Month] = 4 then Date.AddDays([Fiscal Month 03 End], 1) else 
+			if [Fiscal Month] = 5 then Date.AddDays([Fiscal Month 03 End], 1) else 
+			if [Fiscal Month] = 6 then Date.AddDays([Fiscal Month 03 End], 1) else 
+			if [Fiscal Month] = 7 then Date.AddDays([Fiscal Month 06 End], 1) else 
+			if [Fiscal Month] = 8 then Date.AddDays([Fiscal Month 06 End], 1) else 
+			if [Fiscal Month] = 9 then Date.AddDays([Fiscal Month 06 End], 1) else 
+			if [Fiscal Month] = 10 then Date.AddDays([Fiscal Month 09 End], 1) else 
+			if [Fiscal Month] = 11 then Date.AddDays([Fiscal Month 09 End], 1) else 
+			if [Fiscal Month] = 12 then Date.AddDays([Fiscal Month 09 End], 1) else 
+			null, type date ),
+    Add_End_Of_Fiscal_Qtr = Table.AddColumn(Add_Start_Of_Fiscal_Qtr, "End of Fiscal Quarter", each 
+			if [Fiscal Month] = 1 then [Fiscal Month 03 End] else 
+			if [Fiscal Month] = 2 then [Fiscal Month 03 End] else 
+			if [Fiscal Month] = 3 then [Fiscal Month 03 End] else 
+			if [Fiscal Month] = 4 then [Fiscal Month 06 End] else 
+			if [Fiscal Month] = 5 then [Fiscal Month 06 End] else 
+			if [Fiscal Month] = 6 then [Fiscal Month 06 End] else 
+			if [Fiscal Month] = 7 then [Fiscal Month 09 End] else 
+			if [Fiscal Month] = 8 then [Fiscal Month 09 End] else 
+			if [Fiscal Month] = 9 then [Fiscal Month 09 End] else 
+			if [Fiscal Month] = 10 then [Fiscal Month 12 End] else 
+			if [Fiscal Month] = 11 then [Fiscal Month 12 End] else 
+			if [Fiscal Month] = 12 then [Fiscal Month 12 End] else 
+			null, type date ),
+    CurrDt_Start_Fqtr_Index = Record.Field(Table.Min(Table.Buffer(Table.SelectRows( Add_End_Of_Fiscal_Qtr, each [End of Fiscal Quarter] > CurrDt_Index ) ), "Start of Fiscal Quarter"), "Start of Fiscal Quarter"),
+    CurrDt_Start_Fyr_Index = Record.Field(Table.Min(Table.Buffer(Table.SelectRows( Add_End_Of_Fiscal_Qtr, each [Fiscal Year End] > CurrDt_Index ) ), "Fiscal Year Start"), "Fiscal Year Start"),
+    Add_Fiscal_Qtr_Offset = Table.AddColumn(Add_End_Of_Fiscal_Qtr, "Fiscal Quarter Offset", each Number.Round(Number.From( [Start of Fiscal Quarter] - CurrDt_Start_Fqtr_Index)/ 90,0), Int64.Type),
+  #"Added custom 1" = Table.TransformColumnTypes(Table.AddColumn(Add_Fiscal_Qtr_Offset, "Fiscal Year Offset", each Number.Round(Number.From( [Fiscal Year Start] - CurrDt_Start_Fyr_Index)/ 365,0)), {{"Fiscal Year Offset", Int64.Type}}),
+  #"Inserted prefix" = Table.AddColumn(#"Added custom 1", "Fiscal YR", each "FY" & Text.From([FY]), type text),
+  #"Added custom" = Table.AddColumn(#"Inserted prefix", "Fiscal Yr-Wk", each [Fiscal Year] & "-" & Text.From([Fiscal Week num]), type text),
+  AddDayOfFiscalMonth = Table.TransformColumnTypes(Table.AddColumn(#"Added custom", "Day of Fiscal Month", each Duration.Days([Date] - [Start of Fiscal Month]) + 1), {{"Day of Fiscal Month", Int64.Type}}),
+  AddDayOfFiscalQuarter = Table.TransformColumnTypes(Table.AddColumn(AddDayOfFiscalMonth, "Day of Fiscal Quarter", each Duration.Days([Date]-[Start of Fiscal Quarter]) + 1), {{"Day of Fiscal Quarter", Int64.Type}}),
+  AddMonthOfFiscalQuarter = Table.TransformColumnTypes(Table.AddColumn(AddDayOfFiscalQuarter, "Month Of Fiscal Quarter", each Number.Round( Duration.Days([Start of Fiscal Month]-[Start of Fiscal Quarter])/30, 0 ) + 1), {{"Month Of Fiscal Quarter", Int64.Type}}),
+  AddPeriodNo = Table.TransformColumnTypes(Table.AddColumn(AddMonthOfFiscalQuarter, "Fiscal Period", each Text.PadStart(Text.From([Fiscal Month]),3,"0")), {{"Fiscal Period", type text}}),
+  AddSeqFiscalYear = Table.TransformColumnTypes(Table.AddColumn(AddPeriodNo, "Sequential Fiscal Year", each 1 + Number.Round(Number.From([Fiscal Year Start] - ref_FiscalStartCalendar) / 365 , 0)), {{"Sequential Fiscal Year", Int64.Type}}),
+  AddSeqFiscalQtr = Table.TransformColumnTypes(Table.AddColumn(AddSeqFiscalYear, "Sequential Fiscal Quarter", each -1 + Number.Round(Number.From([Start of Fiscal Quarter] - ref_FiscalStartCalendar) / 90 , 0)), {{"Sequential Fiscal Quarter", Int64.Type}}),
+  AddSeqFiscalMonth = Table.TransformColumnTypes(Table.AddColumn(AddSeqFiscalQtr, "Sequential Fiscal Month", each -7 + Number.Round(Number.From([Start of Fiscal Month] - ref_FiscalStartCalendar) / 30 , 0)), {{"Sequential Fiscal Month", Int64.Type}}),
+  AddFiscWeekOfQtr = Table.TransformColumnTypes(Table.AddColumn(AddSeqFiscalMonth, "Week of Fiscal Quarter Num", each 1 + Number.Round( Number.From([Start of Fiscal Week] - [Start of Fiscal Quarter]) / 7, 0 )), {{"Week of Fiscal Quarter Num", Int64.Type}}),
+  AddWkOfFiscYr = Table.TransformColumnTypes(Table.AddColumn(AddFiscWeekOfQtr, "Week of Fiscal Year", each "W"&Number.ToText([Fiscal Week num])), {{"Week of Fiscal Year", type text}}),
+  #"Added custom 2" = Table.TransformColumnTypes(Table.AddColumn(AddWkOfFiscYr, "Week of Fiscal Quarter", each "W"&Number.ToText([Week of Fiscal Quarter Num])), {{"Week of Fiscal Quarter", type text}}), 
+  #"Added Custom" = Table.TransformColumnTypes(Table.AddColumn(#"Added custom 2", "WeekDaysOfMonth", each Duration.Days([End of Fiscal Month] -[End of Fiscal Week])) ,{{"WeekDaysOfMonth", Int64.Type}})
+in
+    #"Added Custom"
