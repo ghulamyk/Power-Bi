@@ -1,0 +1,30 @@
+
+// dynamic to fiscal month, quarter, year
+var _monthsBack =
+SWITCH(
+    TRUE(),
+    HASONEVALUE('Calendar'[Fiscal Month Offset]), 1,
+    HASONEVALUE('Calendar'[Fiscal Quarter Offset]), 3,
+    12
+)
+var _currOffset = MAX( 'Calendar'[Sequential Fiscal Month] )
+var _offsetBegin = MIN( 'Calendar'[Sequential Fiscal Month] ) - _monthsBack
+var _offsetEnd = _currOffset - _monthsBack
+var _cy = MAX( 'Calendar'[Fiscal Year Offset] )
+var _datesOffsetPd = 
+CALCULATETABLE(
+    VALUES( 'Calendar'[Date] )
+    , ALL( 'Calendar' )
+    , 'Calendar'[Sequential Fiscal Month] >= _offsetBegin &&
+        'Calendar'[Sequential Fiscal Month] <= _offsetEnd
+)
+var _rslt = 
+CALCULATE ( 
+    SELECTEDMEASURE(), 
+    'Calendar'[Date] IN _datesOffsetPd
+)
+RETURN
+DIVIDE(
+    DIVIDE( SELECTEDMEASURE() - _rslt, ABS(_rslt) ) ,
+    _cy <= 0
+)
