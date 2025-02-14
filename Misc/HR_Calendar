@@ -1,0 +1,76 @@
+let
+    StartDate = #date(2023, 5, 1),
+    EndDate = #date(2028, 4, 30),
+    DateList = List.Dates(StartDate, Duration.Days(EndDate - StartDate) + 1, #duration(1, 0, 0, 0)),
+    DateTable = Table.FromList(DateList, Splitter.SplitByNothing(), {"Date"}),
+    DateTableWithDay = Table.AddColumn(DateTable, "Day", each Date.Day([Date])),
+    DateTableWithDayName = Table.AddColumn(DateTableWithDay, "Day Name", each Text.Start(Date.DayOfWeekName([Date]), 3)),
+    #"Inserted Year" = Table.AddColumn(DateTableWithDayName, "Year", each Date.Year([Date]), Int64.Type),
+    DateTableWithFiscalMonth = Table.AddColumn(#"Inserted Year", "Fiscal Month", each if Date.Month([Date]) >= 5 then Date.Month([Date]) - 4 else Date.Month([Date]) + 8),
+    #"Added Conditional Column" = Table.AddColumn(DateTableWithFiscalMonth, "Fiscal Month Name", each 
+        if [Fiscal Month] = 1 then "May" else
+        if [Fiscal Month] = 2 then "Jun" else
+        if [Fiscal Month] = 3 then "Jul" else
+        if [Fiscal Month] = 4 then "Aug" else
+        if [Fiscal Month] = 5 then "Sept" else
+        if [Fiscal Month] = 6 then "Oct" else
+        if [Fiscal Month] = 7 then "Nov" else
+        if [Fiscal Month] = 8 then "Dec" else
+        if [Fiscal Month] = 9 then "Jan" else
+        if [Fiscal Month] = 10 then "Feb" else
+        if [Fiscal Month] = 11 then "Mar" else 
+        if [Fiscal Month] = 12 then "Apr" else null),
+    DateTableWithFiscalYear = Table.AddColumn(#"Added Conditional Column", "Fiscal Year", each 
+        if [Fiscal Month] <= 8 then Date.Year([Date]) + 1 else Date.Year([Date])),
+    DateTableWithStartOfFiscalYear = Table.AddColumn(DateTableWithFiscalYear, "StartOfFiscalYear", 
+        each if Date.Month([Date]) >= 5 then #date(Date.Year([Date]), 5, 1) else #date(Date.Year([Date]) - 1, 5, 1), type date),
+     DateTableWithEndOfFiscalYear = Table.AddColumn(DateTableWithStartOfFiscalYear, "EndOfFiscalYear", 
+        each if Date.Month([Date]) >= 5 then #date(Date.Year([Date]) + 1, 4, 30) else #date(Date.Year([Date]), 4, 30), type date),
+    DateTableWithStartOfFiscalQuarter = Table.AddColumn(DateTableWithEndOfFiscalYear, "StartOfFiscalQuarter", 
+        each 
+            if [Fiscal Month] = 1 then #date(Date.Year([Date]), 5, 1) 
+            else if [Fiscal Month] = 2 then #date(Date.Year([Date]), 5, 1) 
+            else if [Fiscal Month] = 3 then #date(Date.Year([Date]), 5, 1) 
+            else if [Fiscal Month] = 4 then #date(Date.Year([Date]), 8, 1) 
+            else if [Fiscal Month] = 5 then #date(Date.Year([Date]), 8, 1) 
+            else if [Fiscal Month] = 6 then #date(Date.Year([Date]), 8, 1) 
+            else if [Fiscal Month] = 7 then #date(Date.Year([Date]), 11, 1) 
+            else if [Fiscal Month] = 8 then #date(Date.Year([Date]), 11, 1) 
+            else if [Fiscal Month] = 9 then #date(Date.Year([Date]), 2, 1) 
+            else if [Fiscal Month] = 10 then #date(Date.Year([Date]), 2, 1) 
+            else if [Fiscal Month] = 11 then #date(Date.Year([Date]), 2, 1) 
+            else #date(Date.Year([Date]), 5, 1), type date),
+    DateTableWithEndOfFiscalQuarter = Table.AddColumn(DateTableWithStartOfFiscalQuarter, "EndOfFiscalQuarter", 
+        each 
+            if [Fiscal Month] = 1 then #date(Date.Year([Date]), 7, 31) 
+            else if [Fiscal Month] = 2 then #date(Date.Year([Date]), 7, 31) 
+            else if [Fiscal Month] = 3 then #date(Date.Year([Date]), 7, 31) 
+            else if [Fiscal Month] = 4 then #date(Date.Year([Date]), 10, 31) 
+            else if [Fiscal Month] = 5 then #date(Date.Year([Date]), 10, 31) 
+            else if [Fiscal Month] = 6 then #date(Date.Year([Date]), 10, 31) 
+            else if [Fiscal Month] = 7 then #date(Date.Year([Date]), 1, 31) 
+            else if [Fiscal Month] = 8 then #date(Date.Year([Date]), 1, 31) 
+            else if [Fiscal Month] = 9 then #date(Date.Year([Date]), 4, 30) 
+            else if [Fiscal Month] = 10 then #date(Date.Year([Date]), 4, 30) 
+            else if [Fiscal Month] = 11 then #date(Date.Year([Date]), 4, 30) 
+            else #date(Date.Year([Date]), 7, 31), type date),
+    ref_FiscalStartCalendar = List.Min(DateTableWithStartOfFiscalYear[StartOfFiscalYear]),
+    DateTableWithFiscalQuarter = Table.AddColumn(DateTableWithEndOfFiscalQuarter, "Fiscal Quarter", each 
+        if [Fiscal Month] <= 3 then "Q1" else 
+        if [Fiscal Month] <= 6 then "Q2" else 
+        if [Fiscal Month] <= 9 then "Q3" else "Q4"),
+    DateTableWithFiscalQuarterNum = Table.AddColumn(DateTableWithFiscalQuarter, "Fiscal Quarter Num", each Text.End([Fiscal Quarter], 1), type text),
+    DateTableWithFY = Table.AddColumn(DateTableWithFiscalQuarterNum, "FY", each "FY" & Text.End(Text.From([Fiscal Year], "en-US"), 2), type text),
+    DateTableWithFiscalYearMonth = Table.AddColumn(DateTableWithFY, "Fiscal Year Month", each Text.Combine({[Fiscal Month Name], [FY]}, " - "), type text),
+    DateTableWithFiscalYearQuarter = Table.AddColumn(DateTableWithFiscalYearMonth, "Fiscal Year Quarter", each Text.Combine({[Fiscal Quarter], [FY]}, " - "), type text),
+    DateTableWithFiscalYearMonthNumber = Table.AddColumn(DateTableWithFiscalYearQuarter, "Fiscal Year Month Num", each Text.From([Fiscal Year]) & Text.PadStart(Text.From([Fiscal Month]), 2, "0"), type text),
+    DateTableWithSequentialFiscalMonth = Table.AddColumn(DateTableWithFiscalYearMonthNumber, "Sequential Fiscal Month", 
+        each ((Date.Year([Date]) - Date.Year(StartDate)) * 12 + Date.Month([Date]) - Date.Month(StartDate)) + 1, type number),
+    DateTableWithSequentialFiscalQuarter = Table.AddColumn(DateTableWithSequentialFiscalMonth, "Sequential Fiscal Quarter", 
+        each ((Date.Year([Date]) - Date.Year(StartDate)) * 4 + Number.RoundDown((Date.Month([Date]) - 5) / 3)) + 1, type number),
+    DateTableWithSequentialFiscalYear = Table.AddColumn(DateTableWithSequentialFiscalQuarter, "Sequential Fiscal Year", 
+        each if [Date] >= [StartOfFiscalYear] then (Date.Year([Date]) - Date.Year(StartDate)) + 1 
+             else (Date.Year([Date]) - Date.Year(StartDate)), type number),
+    #"Changed Type" = Table.TransformColumnTypes(DateTableWithSequentialFiscalYear,{{"Date", type date}, {"Day", type text}, {"Day Name", type text}, {"Fiscal Month", Int64.Type}, {"Fiscal Month Name", type text}, {"Fiscal Year", Int64.Type}, {"Fiscal Quarter", type text}, {"Fiscal Quarter Num", Int64.Type}, {"Sequential Fiscal Month", Int64.Type}, {"Sequential Fiscal Quarter", Int64.Type}, {"Sequential Fiscal Year", Int64.Type}})
+in
+    #"Changed Type"
