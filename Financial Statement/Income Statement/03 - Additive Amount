@@ -1,0 +1,8 @@
+03 - Additive Amount = 
+//Switch to determine whether to add the display value or raw value
+VAR isHeaderFiltered =
+    ISFILTERED ( 'dimHeadersPL'[FS Header Description] )
+VAR Result =
+    IF ( isHeaderFiltered, [02 - Display Amount], [01 - Raw Amount] )
+RETURN
+    Result
