@@ -1,0 +1,12 @@
+05 - Running Subtotal (BS) = 
+VAR ThisHeaderGroup =
+    SELECTEDVALUE ( 'dimHeadersBS'[Group] )
+
+VAR Result =
+    CALCULATE (
+        [03 - Additive Total (BS)],
+        ALL ( 'dimHeadersBS' ),
+        'dimHeadersBS'[Group] = ThisHeaderGroup
+    )
+RETURN
+    Result
