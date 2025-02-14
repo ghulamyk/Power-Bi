@@ -1,0 +1,9 @@
+06 - Liabilities and Equity (BS) = 
+VAR Result =
+    CALCULATE (
+        [03 - Additive Total (BS)],
+        ALL ( 'dimHeadersBS' ),
+        'dimHeadersBS'[Group] = "Liabilities" || 'dimHeadersBS'[Group] = "Equity" 
+    )
+RETURN
+    Result
