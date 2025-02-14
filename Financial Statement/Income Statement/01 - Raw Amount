@@ -1,0 +1,7 @@
+01 - Raw Amount = CALCULATE(  
+        [Base, Snowflake GL_DTL FX, PL-AOP Hybrid by RPT ID]
+        , KEEPFILTERS(dimAccount[G/L Account] <> "3001700" && dimAccount[G/L Account] <> "4001700" )
+        , KEEPFILTERS(dimAccount[Inter company] = "No")
+        , KEEPFILTERS( 'Calendar'[Fiscal Year Offset] <= 0)
+        
+    )
