@@ -1,0 +1,111 @@
+
+var _01RawAmount = SELECTEDMEASURE()
+var _02DisplayValue = 
+    SUMX (
+        VALUES ( dimAccount[Flip Signs] ),
+        SELECTEDMEASURE() * dimAccount[Flip Signs]
+    )
+var _03AdditiveTotal = 
+    VAR isHeaderFiltered =
+        ISFILTERED ( 'dimHeadersBS'[FS Header Description] )
+    VAR Result =
+        SWITCH (
+            TRUE (),
+            isHeaderFiltered, _01RawAmount,
+            _02DisplayValue
+        )
+RETURN
+    Result
+var _04RunningTotal =
+    VAR ThisHeaderID =
+        SELECTEDVALUE ( 'dimHeadersBS'[Order] )
+    VAR ThisHeaderIDRangeBegin =
+        ROUNDDOWN ( ThisHeaderID / 10 ^ ( LEN ( ThisHeaderID ) - 1 ), 0 )
+            * 10
+                ^ ( LEN ( ThisHeaderID ) - 1 )
+    VAR Result =
+        CALCULATE (
+                VAR isHeaderFiltered =
+                    ISFILTERED ( 'dimHeadersBS'[FS Header Description] )
+                VAR Result =
+                    SWITCH (
+                        TRUE (),
+                        isHeaderFiltered, SELECTEDMEASURE(),
+                        SUMX (
+                                VALUES ( dimAccount[Flip Signs] ),
+                                SELECTEDMEASURE() * dimAccount[Flip Signs]
+                            )
+                    )
+                RETURN Result
+            ,
+            ALL ( 'dimHeadersBS' ),
+            'dimHeadersBS'[Order] <= ThisHeaderID
+                && 'dimHeadersBS'[Order] >= ThisHeaderIDRangeBegin
+        )
+    RETURN
+        Result
+var _05RunningSubtotal =
+    VAR ThisHeaderGroup =
+        SELECTEDVALUE ( 'dimHeadersBS'[Group] )
+    VAR Result =
+        CALCULATE (
+                VAR isHeaderFiltered =
+                    ISFILTERED ( 'dimHeadersBS'[FS Header Description] )
+                VAR Result =
+                    SWITCH (
+                        TRUE (),
+                        isHeaderFiltered, SELECTEDMEASURE(),
+                        SUMX (
+                                VALUES ( dimAccount[Flip Signs] ),
+                                SELECTEDMEASURE() * dimAccount[Flip Signs]
+                            )
+                    )
+            RETURN Result,
+            ALL ( 'dimHeadersBS' ),
+            'dimHeadersBS'[Group] = ThisHeaderGroup
+        )
+    RETURN
+        Result
+var _06LiabilitiesAndEquity =
+VAR Result =
+    CALCULATE (
+        VAR isHeaderFiltered =
+            ISFILTERED ( 'dimHeadersBS'[FS Header Description] )
+        VAR Result =
+            SWITCH (
+                TRUE (),
+                isHeaderFiltered, SELECTEDMEASURE(),
+                SUMX (
+                        VALUES ( dimAccount[Flip Signs] ),
+                        SELECTEDMEASURE() * dimAccount[Flip Signs]
+                    )
+            )
+        RETURN Result
+        ,
+        ALL ( 'dimHeadersBS' ),
+        'dimHeadersBS'[Group] = "Liabilities"
+            || 'dimHeadersBS'[Group] = "Equity"
+    )
+RETURN
+    Result
+var _07TotalAmt = 
+    VAR CalcType =
+        SELECTEDVALUE ( 'dimHeadersBS'[Calc Type] )
+    VAR DisplayDetailCode =
+        SELECTEDVALUE ( 'dimHeadersBS'[Detail] )
+    VAR isAccountVisible =
+        ISFILTERED ( dimAccount[Acct Group 3 Desc] )
+    VAR Result =
+        SWITCH (
+            TRUE (),
+            isAccountVisible = TRUE ()
+                && DisplayDetailCode = 0, BLANK (),
+            //to make the accounts invisible by changing the COA attributes
+            CalcType = 1, _03AdditiveTotal,
+            CalcType = 2, _04RunningTotal * MIN ( dimHeadersBS[Flip Signs] ),
+            CalcType = 3, _05RunningSubtotal * MIN ( dimHeadersBS[Flip Signs] ),
+            CalcType = 9, _06LiabilitiesAndEquity * MIN ( dimHeadersBS[Flip Signs] )
+        )
+    RETURN
+        Result
+RETURN _07TotalAmt
