@@ -1,0 +1,11 @@
+Rolling Sum Last 12 months = 
+VAR StartDate = MAX('MaxFiscalMonthDate'[Fiscal Month Offset])
+VAR EndDate = Min('MaxFiscalMonthDate'[Fiscal Month Offset]) - 12
+RETURN
+    CALCULATE(
+        [Base | Revenue],
+        FILTER(
+            ALL('MaxFiscalMonthDate'),
+            'MaxFiscalMonthDate'[Fiscal Month Offset] >= EndDate && 'MaxFiscalMonthDate'[Fiscal Month Offset] <= StartDate
+        )
+    )
