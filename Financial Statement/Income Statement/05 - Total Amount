@@ -1,0 +1,40 @@
+05 - Total Amount = VAR CalcType =
+    SELECTEDVALUE ( 'dimHeadersPL'[Calc Type] )
+VAR DisplayDetailCode =
+    SELECTEDVALUE ( 'dimHeadersPL'[Detail] )
+VAR isAccountVisible =
+    ISFILTERED ( dimAccount[Acct Group 3 Desc] )
+VAR isSelectedPdAfterCalPd = 
+    MAX ( 'Calendar'[Fiscal Year-Month num] ) <= MAX ( 'Current Fiscal Month-Year'[Fiscal Year-Month num] )
+VAR Result =
+    SWITCH (
+        TRUE (),
+                isAccountVisible = TRUE ()
+                    && DisplayDetailCode = 0, BLANK (),
+        CalcType = 1, 
+            IF (
+                isSelectedPdAfterCalPd, [03 - Additive Amount] 
+            ),
+        CalcType = 2,
+            IF (
+                isSelectedPdAfterCalPd,  [04 - Running Amount] * MIN ( dimHeadersPL[Flip Signs] )
+            ),
+        CalcType = 3,
+            IF (
+                isSelectedPdAfterCalPd,  
+                    var _netTradeSales = 
+                    CALCULATE( [03 - Additive Amount] ,
+                        ALLSELECTED( dimHeadersPL ), 
+                        dimHeadersPL[FS Header Description] = "NET TRADE SALES" 
+                    )
+                    var _currParentHeader = SELECTEDVALUE( dimHeadersPL[FS Header - Numerator] )
+                    var _Numerator = 
+                    CALCULATE( [04 - Running Amount] * MIN ( dimHeadersPL[Flip Signs] ),
+                        ALLSELECTED( dimHeadersPL ), 
+                        dimHeadersPL[FS Header Description] = _currParentHeader
+                    )
+                    RETURN DIVIDE( _Numerator, _netTradeSales )
+            )
+    )
+RETURN
+    Result 
