@@ -1,0 +1,29 @@
+
+var _cQTD =
+    var _currFiscQtr = MAX( 'Calendar'[Sequential Fiscal Quarter] )
+    var _currDay = MAX( 'Calendar'[Day of Fiscal Year] )
+    RETURN 
+    CALCULATE(
+        SELECTEDMEASURE()
+        , ALL( 'Calendar' )
+        , 'Calendar'[Day of Fiscal Year] <= _currDay
+        , 'Calendar'[Sequential Fiscal Quarter] = _currFiscQtr
+    )
+var _pQTD =
+    var _currFiscQtr = MAX( 'Calendar'[Sequential Fiscal Quarter] )
+    var _prevFiscQtr = _currFiscQtr - 1
+    var _dayOfFiscalQtr = MAX( 'Calendar'[Day of Fiscal Quarter] )
+    // likely need to errHndl cases where largest day in fiscal qtr doesn't line up right
+     
+    RETURN 
+    CALCULATE(
+        SELECTEDMEASURE()
+        , ALL( 'Calendar' )
+        , 'Calendar'[Sequential Fiscal Quarter] = _prevFiscQtr
+        , 'Calendar'[Day of Fiscal Quarter] <= _dayOfFiscalQtr
+    )
+RETURN
+    IF (
+        NOT ISBLANK ( _cQTD ) && NOT ISBLANK ( _pQTD ),
+        DIVIDE( _cQTD - _pQTD , _pQTD )
+    )
