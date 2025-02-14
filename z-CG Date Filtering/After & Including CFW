@@ -1,0 +1,5 @@
+
+CALCULATE(
+    SELECTEDMEASURE(),
+    KEEPFILTERS( 'Calendar'[Fiscal Week Offset] >= 0 )
+)
