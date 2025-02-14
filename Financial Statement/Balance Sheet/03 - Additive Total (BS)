@@ -1,0 +1,8 @@
+03 - Additive Total (BS) = 
+//Switch to determine whether to add the display value or raw value
+VAR isHeaderFiltered =
+    ISFILTERED ( 'dimHeadersBS'[FS Header Description] )
+VAR Result =
+    SWITCH(TRUE(),/*isHeaderFiltered && MAX(dimHeadersBS[Calc Type])=3, [02 - Display Value (BS)],*/ isHeaderFiltered, [02 - Display Value (BS)], [01 - Raw Amount (BS)] )
+RETURN
+    Result
