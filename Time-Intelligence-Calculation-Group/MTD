@@ -1,0 +1,10 @@
+
+var _currFiscMth = MAX( 'Calendar'[Sequential Fiscal Month] )
+var _currDay = MAX( 'Calendar'[Day of Fiscal Year] )
+RETURN 
+CALCULATE(
+    SELECTEDMEASURE()
+    , ALL( 'Calendar' )
+    , 'Calendar'[Day of Fiscal Year] <= _currDay
+    , 'Calendar'[Sequential Fiscal Month] = _currFiscMth
+)
