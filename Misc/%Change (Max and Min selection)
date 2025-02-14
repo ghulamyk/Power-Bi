@@ -1,0 +1,20 @@
+%Change = 
+VAR _currentMonth = SELECTEDVALUE(MaxFiscalMonthDate[Fiscal Month Offset])
+VAR _MaxMonth = CALCULATE(
+    MAX(MaxFiscalMonthDate[Fiscal Month Offset]),
+    ALLSELECTED(MaxFiscalMonthDate),
+    MaxFiscalMonthDate[Fiscal Month Offset] <= _currentMonth)
+VAR _MinMonth = CALCULATE(
+    MIN(MaxFiscalMonthDate[Fiscal Month Offset]),
+    ALLSELECTED(MaxFiscalMonthDate),
+    MaxFiscalMonthDate[Fiscal Month Offset] <= _currentMonth)
+VAR _MaxAmt = CALCULATE(
+    [Backorder],
+    ALL(MaxFiscalMonthDate),
+    KEEPFILTERS(MaxFiscalMonthDate[Fiscal Month Offset] = _MaxMonth))
+VAR _MinAmt = CALCULATE(
+    [Backorder],
+    ALL(MaxFiscalMonthDate),
+    KEEPFILTERS(MaxFiscalMonthDate[Fiscal Month Offset] = _MinMonth))
+RETURN
+    DIVIDE((_MaxAmt-_MinAmt),_MinAmt,0)
