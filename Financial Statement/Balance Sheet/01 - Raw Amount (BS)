@@ -1,0 +1,6 @@
+01 - Raw Amount (BS) = 
+Calculate(
+    [Base, GL_PCA, FX, AOP]
+    ,Keepfilters(dimAccount[Financial Statement ID]="BS")
+    ,Keepfilters(dimAccount[Inter company]="NO")
+)
